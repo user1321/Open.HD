@@ -94,6 +94,11 @@ Receiver::Receiver(const char *wlan, int wlan_idx, int radio_port, BaseAggregato
 
     pcap_freecode(&bpfprogram);
     fd = pcap_get_selectable_fd(ppcap);
+
+    if(video_rssi_enabled == true)
+    {
+        rx_status->wifi_adapter_cnt++;
+    }
 }
 
 
@@ -354,12 +359,33 @@ void Aggregator::dump_stats(FILE *fp)
 
     for(antenna_stat_t::iterator it = antenna_stat.begin(); it != antenna_stat.end(); it++)
     {
-        fprintf(fp, "%" PRIu64 "\tANT\t%" PRIx64 "\t%d:%d:%d:%d\n", ts, it->first, it->second.count_all, it->second.rssi_min, it->second.rssi_sum / it->second.count_all, it->second.rssi_max);
+	//fprintf(fp, "card: %d, rssi_avg: %d \n", it, it->second.rssi_sum / it->second.count_all);
+        //fprintf(fp, "%" PRIu64 "\tANT\t%" PRIx64 "\t%d:%d:%d:%d\n", ts, it->first, it->second.count_all, it->second.rssi_min, it->second.rssi_sum / it->second.count_all, it->second.rssi_max);
+        if(video_rssi_enabled == true)
+        {
+            rx_status->adapter[it->second.wlan_idx].current_signal_dbm = it->second.rssi_sum / it->second.count_all;
+            rx_status->adapter[it->second.wlan_idx].signal_good = 1;
+            rx_status->adapter[it->second.wlan_idx].received_packet_cnt += count_p_all;
+            //rx_status->adapter[it->second.wlan_idx].wrong_crc_cnt += count_p_dec_err;
+            //rx_status->adapter[it->second.wlan_idx].wrong_crc_cnt += count_p_bad;
+        }
     }
+
+    if(video_rssi_enabled == true)
+    {
+        rx_status->lost_per_block_cnt += 0;//count_p_bad;
+        rx_status->damaged_block_cnt += count_p_bad;
+        rx_status->damaged_block_cnt += count_p_dec_err; 
+        rx_status->received_packet_cnt += count_p_all;
+        rx_status->received_block_cnt += count_p_all;
+        rx_status->lost_packet_cnt += count_p_lost;
+    }
+
     antenna_stat.clear();
 
-    fprintf(fp, "%" PRIu64 "\tPKT\t%u:%u:%u:%u:%u:%u\n", ts, count_p_all, count_p_dec_err, count_p_dec_ok, count_p_fec_recovered, count_p_lost, count_p_bad);
-    fflush(fp);
+    //fprintf(fp, "%" PRIu64 "\tPKT\t%u:%u:%u:%u:%u:%u\n", ts, count_p_all, count_p_dec_err, count_p_dec_ok, count_p_fec_recovered, count_p_lost, count_p_bad);
+    //fprintf(fp, "count_p_all %d \n  count_p_dec_err %d \n count_p_dec_ok %d \n count_p_fec_recovered %d \n count_p_lost %d \n count_p_bad %d \n",  count_p_all, count_p_dec_err, count_p_dec_ok, count_p_fec_recovered, count_p_lost, count_p_bad);
+    //fflush(fp);
 
     count_p_all = 0;
     count_p_dec_err = 0;
@@ -384,6 +410,8 @@ void Aggregator::log_rssi(const sockaddr_in *sockaddr, uint8_t wlan_idx, const u
         key |= ((uint64_t)wlan_idx << 8 | (uint64_t)ant[i]);
 
         antenna_stat[key].log_rssi(rssi[i]);
+        antenna_stat[key].wlan_idx = wlan_idx;
+	//fprintf(stderr, "antenna_stat[key].log_rssi(rssi[i]): rssi: %d wlan_idx: %d , i: %d \n", rssi[i], wlan_idx, i);
     }
 }
 
@@ -469,7 +497,7 @@ void Aggregator::process_packet(const uint8_t *buf, size_t size, uint8_t wlan_id
                                              sizeof(wblock_hdr_t),
                                              (uint8_t*)(&(block_hdr->nonce)), session_key) != 0)
     {
-        fprintf(stderr, "unable to decrypt packet #0x%" PRIx64 "\n", be64toh(block_hdr->nonce));
+        //fprintf(stderr, "unable to decrypt packet #0x%" PRIx64 "\n", be64toh(block_hdr->nonce));
         count_p_dec_err += 1;
         return;
     }
@@ -485,14 +513,14 @@ void Aggregator::process_packet(const uint8_t *buf, size_t size, uint8_t wlan_id
     // Should never happend due to generating new session key on tx side
     if (block_idx > MAX_BLOCK_IDX)
     {
-        fprintf(stderr, "block_idx overflow\n");
+        //fprintf(stderr, "block_idx overflow\n");
         count_p_bad += 1;
         return;
     }
 
     if (fragment_idx >= fec_n)
     {
-        fprintf(stderr, "invalid fragment_idx: %d\n", fragment_idx);
+        //fprintf(stderr, "invalid fragment_idx: %d\n", fragment_idx);
         count_p_bad += 1;
         return;
     }
@@ -567,7 +595,7 @@ void Aggregator::send_packet(int ring_idx, int fragment_idx)
 
     if(packet_size > MAX_PAYLOAD_SIZE)
     {
-        fprintf(stderr, "corrupted packet %u\n", seq);
+        //fprintf(stderr, "corrupted packet %u\n", seq);
         count_p_bad += 1;
     }else{
         send(sockfd, payload, packet_size, MSG_DONTWAIT);
@@ -742,14 +770,14 @@ int main(int argc, char* const *argv)
 {
     int opt;
     uint8_t k = 8, n = 12, radio_port = 1;
-    int log_interval = 1000;
+    int log_interval = 200;
     int client_port = 5600;
     int srv_port = 0;
     string client_addr = "127.0.0.1";
     rx_mode_t rx_mode = LOCAL;
     string keypair = "rx.key";
 
-    while ((opt = getopt(argc, argv, "K:fa:k:n:c:u:p:l:")) != -1) {
+    while ((opt = getopt(argc, argv, "K:fa:k:n:c:u:p:l:r:")) != -1) {
         switch (opt) {
         case 'K':
             keypair = optarg;
@@ -779,14 +807,39 @@ int main(int argc, char* const *argv)
         case 'l':
             log_interval = atoi(optarg);
             break;
+	case 'r':
+	    video_rssi_enabled = true;
+            break;
         default: /* '?' */
         show_usage:
-            fprintf(stderr, "Local receiver: %s [-K rx_key] [-k RS_K] [-n RS_N] [-c client_addr] [-u client_port] [-p radio_port] [-l log_interval] interface1 [interface2] ...\n", argv[0]);
+            fprintf(stderr, "Local receiver: %s [-K rx_key] [-k RS_K] [-n RS_N] [-c client_addr] [-u client_port] [-p radio_port] [-l log_interval] [-r enable_rssi 1] interface1 [interface2] ...\n", argv[0]);
             fprintf(stderr, "Remote (forwarder): %s -f [-c client_addr] [-u client_port] [-p radio_port] interface1 [interface2] ...\n", argv[0]);
             fprintf(stderr, "Remote (aggregator): %s -a server_port [-K rx_key] [-k RS_K] [-n RS_N] [-c client_addr] [-u client_port] [-l log_interval]\n", argv[0]);
             fprintf(stderr, "Default: K='%s', k=%d, n=%d, connect=%s:%d, radio_port=%d, log_interval=%d\n", keypair.c_str(), k, n, client_addr.c_str(), client_port, radio_port, log_interval);
             fprintf(stderr, "WFB version " WFB_VERSION "\n");
             exit(1);
+        }
+    }
+
+    if(video_rssi_enabled == true)
+    {
+        rx_status = status_memory_open();
+
+        rx_status->wifi_adapter_cnt = 0;
+        rx_status->tx_restart_cnt = 0;
+        rx_status->received_block_cnt = 0;
+        rx_status->damaged_block_cnt = 0;
+        rx_status->received_packet_cnt = 0;
+        rx_status->lost_packet_cnt = 0;
+	rx_status->lost_per_block_cnt;
+        rx_status->kbitrate = 0;
+
+        for(int g=0; g<MAX_PENUMBRA_INTERFACES; ++g)
+        {
+	    rx_status->adapter[g].received_packet_cnt = 0;
+	    rx_status->adapter[g].wrong_crc_cnt = 0;
+	    rx_status->adapter[g].current_signal_dbm = -126;
+	    rx_status->adapter[g].signal_good = 0;
         }
     }
 
