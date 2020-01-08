@@ -25,6 +25,7 @@
 #define SERVER "127.0.0.1"
 #define BUFLEN 2  //Max length of buffer
 #define PORT 1257   //The port on which to send data
+#define PORTRTP 1256
 
 int main(int argc, char *argv[])
 {
@@ -34,10 +35,11 @@ int main(int argc, char *argv[])
 	mavlink_message_t msg;
 	
 	uint16_t chValue;
+	uint16_t chValue2;
 	int param_telemetry_protocol = 0;
 
 	int ChannelToListen = atoi(argv[1]);
-	
+	int ChannelToListenRTPRecord = atoi(argv[2]);
 	//UDP init
 	   struct sockaddr_in si_other;
 	int s, i, slen = sizeof(si_other);
@@ -59,6 +61,30 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	//udp init end
+
+	//udp init RTP to USB saver
+
+	struct sockaddr_in si_other2;
+        int s2, i2, slen2 = sizeof(si_other2);
+        char message2[BUFLEN];
+
+        if ((s2 = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
+        {
+                perror(s2);
+                exit(1);
+        }
+
+        memset((char *) &si_other2, 0, sizeof(si_other2));
+        si_other2.sin_family = AF_INET;
+        si_other2.sin_port = htons(PORTRTP);
+
+        if (inet_aton(SERVER, &si_other2.sin_addr) == 0)
+        {
+                fprintf(stderr, "inet_aton() failed\n");
+                exit(1);
+        }
+	//end init end
+
 	
 	while(!fBrokenSocket)
 	{
@@ -125,8 +151,48 @@ int main(int argc, char *argv[])
 									{
 										//printf("sendto() - ok, chval: %d \n", chValue);
 									}
-								}	
+								}
+
+								if( ChannelToListenRTPRecord >= 1 && ChannelToListenRTPRecord <= 18)
+                                                                {
+                                                                        //printf(" in range 1 - 18\n");
+                                                                        if (ChannelToListenRTPRecord == 1)  { chValue2 = mavlink_msg_rc_channels_get_chan1_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 2) { chValue2 = mavlink_msg_rc_channels_get_chan2_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 3) { chValue2 = mavlink_msg_rc_channels_get_chan3_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 4) { chValue2 = mavlink_msg_rc_channels_get_chan4_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 5) { chValue2 = mavlink_msg_rc_channels_get_chan5_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 6) { chValue2 = mavlink_msg_rc_channels_get_chan6_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 7) { chValue2 = mavlink_msg_rc_channels_get_chan7_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 8) { chValue2 = mavlink_msg_rc_channels_get_chan8_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 9) { chValue2 = mavlink_msg_rc_channels_get_chan9_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 10) { chValue2 = mavlink_msg_rc_channels_get_chan10_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 11) { chValue2 = mavlink_msg_rc_channels_get_chan11_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 12) { chValue2 = mavlink_msg_rc_channels_get_chan12_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 13) { chValue2 = mavlink_msg_rc_channels_get_chan13_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 14) { chValue2 = mavlink_msg_rc_channels_get_chan14_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 15) { chValue2 = mavlink_msg_rc_channels_get_chan15_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 16) { chValue2 = mavlink_msg_rc_channels_get_chan16_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 17) { chValue2 = mavlink_msg_rc_channels_get_chan17_raw(&msg); }
+                                                                        if (ChannelToListenRTPRecord == 18) { chValue2 = mavlink_msg_rc_channels_get_chan18_raw(&msg); }
+
+                                                                        //int sizeinbyte = sizeof(ChannelToListen);
+
+                                                                        //unsigned int  under RPi2 = 2 byte
+
+                                                                        message2[0] = chValue2 & 0xFF;
+                                                                        message2[1] = chValue2 >> 8;
+
+                                                                        if (sendto(s2, message2, 2, 0, (struct sockaddr *) &si_other2, slen2) == -1)
+                                                                        {
+                                                                                //printf("sendto() error");
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                                //printf("sendto() - ok, chval: %d \n", chValue);
+                                                                        }
+                                                                }
 							}
+
 							break;
 						default:
 							break;
@@ -138,5 +204,6 @@ int main(int argc, char *argv[])
 	}
 		
 	close(s);
+	close(s2);
 	return 0;
 }
