@@ -254,6 +254,9 @@ function tx_function {
 
     echo $BITRATE_KBIT > /tmp/bitrate_kbit
     echo $BITRATE_MEASURED_KBIT > /tmp/bitrate_measured_kbit
+    
+    echo "0" > /tmp/isrecording
+    echo "0" > /tmp/usbdrivefreespace
 
     if [ "$CTS" == "N" ]; then
 		echo "0" > /tmp/cts
