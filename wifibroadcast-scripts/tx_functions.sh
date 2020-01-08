@@ -326,6 +326,10 @@ grepRet=$?
 if [[ $grepRet -eq 0 ]] ; then
 	IsArduCameraV21="21"
 fi
+
+if [ $ChannelToListenRTPRecord != "0" ]; then
+        /usr/bin/python /home/pi/cameracontrol/SaveRTPToUSB.py -SaveVideoOnUSBAfter $SaveVideoOnUSBAfter -RTPSaveToUSBUrl "$RTPSaveToUSBUrl" &
+fi
 	
 /usr/bin/python /home/pi/cameracontrol/cameracontrolUDP.py -IsArduCameraV21 $IsArduCameraV21 -IsCamera1Enabled $IsCamera1Enabled -IsCamera2Enabled $IsCamera2Enabled -IsCamera3Enabled $IsCamera3Enabled -IsCamera4Enabled $IsCamera4Enabled  -Camera1ValueMin $Camera1ValueMin -Camera1ValueMax $Camera1ValueMax -Camera2ValueMin $Camera2ValueMin -Camera2ValueMax $Camera2ValueMax -Camera3ValueMin $Camera3ValueMin -Camera3ValueMax $Camera3ValueMax  -Camera4ValueMin $Camera4ValueMin -Camera4ValueMax $Camera4ValueMax -DefaultCameraId $DefaultCameraId
 
