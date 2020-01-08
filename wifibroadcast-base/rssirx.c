@@ -119,6 +119,8 @@ uint8_t process_packet(monitor_interface_t *interface, int adapter_no) {
 	    uint16_t bitrate_measured_kbit;
 	    uint8_t cts;
 	    uint8_t undervolt;
+	    uint8_t isrecording;
+	    uint32_t usbdrivefreespace;
 	}  __attribute__ ((__packed__));
 
 	struct payloaddata_s payloaddata;
@@ -159,7 +161,7 @@ uint8_t process_packet(monitor_interface_t *interface, int adapter_no) {
 		}
 	}
 	pu8Payload += u16HeaderLen + interface->n80211HeaderLength;
-	memcpy(&payloaddata,pu8Payload,38); // copy payloaddata (signal, lost packets count, cpuload, temp, ....) to struct
+	memcpy(&payloaddata,pu8Payload,43); // copy payloaddata (signal, lost packets count, cpuload, temp, ....) to struct
 
 //	printf ("signal:%d\n",payloaddata.signal);
 //	printf ("lostpackets:%d\n",payloaddata.lostpackets);
@@ -192,6 +194,9 @@ uint8_t process_packet(monitor_interface_t *interface, int adapter_no) {
 
 	rx_status_sysair->cts = payloaddata.cts;
 	rx_status_sysair->undervolt = payloaddata.undervolt;
+
+	rx_status_sysair->isrecording = payloaddata.isrecording;
+	rx_status_sysair->usbdrivefreespace = payloaddata.usbdrivefreespace;
 
 //	write(STDOUT_FILENO, pu8Payload, 18);
 	return(0);
@@ -240,6 +245,8 @@ void status_memory_init_sysair(wifibroadcast_rx_status_t_sysair *s) {
 	s->bitrate_measured_kbit = 0;
 	s->cts = 0;
 	s->undervolt = 0;
+	s->isrecording = 0;
+        s->usbdrivefreespace = 0;
 }
 
 

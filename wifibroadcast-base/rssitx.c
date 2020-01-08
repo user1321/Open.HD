@@ -85,6 +85,8 @@ struct framedata_s {
     uint16_t bitrate_measured_kbit;
     uint8_t cts;
     uint8_t undervolt;
+    uint8_t isrecording;
+    uint32_t usbdrivefreespace;
 }  __attribute__ ((__packed__));
 
 struct framedata_s framedata;
@@ -219,6 +221,18 @@ void sendRSSI(int sock, telemetry_data_t *td) {
 		fclose(fp);
 		//fprintf(stderr,"temp: %d\n",temp/1000);
 		framedata.temp = temp / 1000;
+
+                fp = fopen("/tmp/isrecording","r");
+                int isrecording = 0;
+                fscanf(fp,"%d",&isrecording);
+                fclose(fp);
+                framedata.isrecording = isrecording;
+
+                fp = fopen("/tmp/usbdrivefreespace","r");
+                int usbdrivefreespace = 0;
+                fscanf(fp,"%d",&usbdrivefreespace);
+                fclose(fp);
+                framedata.usbdrivefreespace = usbdrivefreespace;
 	}
 
 //	printf("signal: %d\n", framedata.signal);
@@ -232,11 +246,13 @@ void sendRSSI(int sock, telemetry_data_t *td) {
 //	printf("lostpackets: %d\n", framedata.lostpackets);
 //	printf("lostpackets_rc: %d\n", framedata.lostpackets_rc);
 	// send three times with different delay in between to increase robustness against packetloss
-	if (write(socks[0], &framedata, 74) < 0 ) fprintf(stderr, "!");
+
+
+	if (write(socks[0], &framedata, 79) < 0 ) fprintf(stderr, "!");
 	usleep(1500);
-	if (write(socks[0], &framedata, 74) < 0 ) fprintf(stderr, "!");
+	if (write(socks[0], &framedata, 79) < 0 ) fprintf(stderr, "!");
 	usleep(2000);
-	if (write(socks[0], &framedata, 74) < 0 ) fprintf(stderr, "!");
+	if (write(socks[0], &framedata, 79) < 0 ) fprintf(stderr, "!");
 }
 
 
@@ -396,6 +412,8 @@ int main (int argc, char *argv[]) {
 	framedata.bitrate_measured_kbit = bitrate_measured_kbit;
 	framedata.cts = cts;
 	framedata.undervolt = undervolt;
+	framedata.isrecording = 0;
+	framedata.usbdrivefreespace = 0;
 
 	while (done) {
 		sendRSSI(sock,&td);

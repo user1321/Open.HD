@@ -94,6 +94,8 @@ void status_memory_init_sysair(wifibroadcast_rx_status_t_sysair *s) {
 	s->bitrate_measured_kbit = 0;
 	s->cts = 0;
 	s->undervolt = 0;
+	s->isrecording = 0;
+	s->usbdrivefreespace = 0;
 }
 
 

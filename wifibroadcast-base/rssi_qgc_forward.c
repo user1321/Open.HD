@@ -47,6 +47,8 @@ typedef struct {
     uint8_t temp_air; // CPU temperature Air Pi
     uint32_t wifi_adapter_cnt; // number of wifi adapters
     wifi_adapter_rx_status_forward_t adapter[6]; // same struct as in wifibroadcast lib.h
+    uint8_t isrecording;
+    uint32_t usbdrivefreespace;
 } __attribute__((packed)) wifibroadcast_rx_status_forward_t;
 
 
@@ -191,6 +193,9 @@ int main(int argc, char *argv[]) {
 	    wbcdata.adapter[j].type = 0;
 	}
 
+        wbcdata.isrecording = 0;
+        wbcdata.usbdrivefreespace = 0;
+
 	if ((s_rssi=socket(PF_INET, SOCK_DGRAM, 0))==-1) printf("ERROR: Could not create UDP socket!");
 
 	for(;;) {
@@ -198,6 +203,8 @@ int main(int argc, char *argv[]) {
 	    wbcdata.lost_packet_cnt = t->lost_packet_cnt;
 	    wbcdata.skipped_packet_cnt = t_sysair->skipped_fec_cnt;
 	    wbcdata.injection_fail_cnt  = t_sysair->injection_fail_cnt;
+	    wbcdata.isrecording = t_sysair->isrecording;
+	    wbcdata.usbdrivefreespace = t_sysair->usbdrivefreespace;
 	    wbcdata.received_packet_cnt = t->received_packet_cnt;
 	    wbcdata.kbitrate = t->kbitrate;
 	    wbcdata.kbitrate_measured =  t_sysair->bitrate_measured_kbit;
@@ -266,7 +273,7 @@ int main(int argc, char *argv[]) {
 		wbcdata.adapter[cardcounter].signal_good = t->adapter[cardcounter].signal_good;
 	    }
 
-	    if (sendto(s_rssi, &wbcdata, 113, 0, (struct sockaddr*)&si_other_rssi, slen_rssi)==-1) printf("ERROR: Could not send RSSI data!");
+	    if (sendto(s_rssi, &wbcdata, 118, 0, (struct sockaddr*)&si_other_rssi, slen_rssi)==-1) printf("ERROR: Could not send RSSI data!");
 	    usleep(250000);
 	}
 	return 0;
