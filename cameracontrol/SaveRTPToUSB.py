@@ -44,6 +44,8 @@ RTPSaveToUSBUrl = args.RTPSaveToUSBUrl
 print("RTPSaveToUSBUrl: " + RTPSaveToUSBUrl)
 
 mountpoint = "/mnt/usbdisk/"
+FreeSpaceFilePath = "/tmp/usbdrivefreespace"
+IsRecordingFilePath = "/tmp/isrecording"
 State = 0
 isLowDiskSpace = False
 isUSBDiskIsNotAvaliable = False
@@ -69,6 +71,14 @@ def GetNextFileName(mountpoint):
     return result
 
 
+def WriteToFile(filename,str):
+    try:
+        f = open(filename, "w")
+        f.write(str)
+        f.close()
+    except Exception as e:
+        print("SaveRTPToUSB exception in WriteToFile function: " + str(e) )
+
 def StartRecordRTP(pipeline):
     global isUSBDiskIsNotAvaliable
     global isLowDiskSpace
@@ -90,6 +100,7 @@ def StartRecordRTP(pipeline):
             if CheckIfPathIsMount(mountpoint) == True:
                 print("USB disk is mounted to: " + mountpoint )
                 FreeSpaceInMB = CheckFreeSpace(mountpoint)
+                WriteToFile(FreeSpaceFilePath, str(FreeSpaceInMB) )
                 if FreeSpaceInMB < DiskSpaceLimit:
                     print("Free disk space on usb drive is less than required. Free space: " + str(FreeSpaceInMB) + " Required: " + str(DiskSpaceLimit) )
                     isLowDiskSpace = True
@@ -102,6 +113,7 @@ def StartRecordRTP(pipeline):
                     args = shlex.split(pipeline)
                     GstHandler = subprocess.Popen(  args )
                     isRecording = True
+                    WriteToFile(IsRecordingFilePath, "1" )
                     if IsMonitorThreadRunning == False:
                         hMonitorThread = threading.Thread(target=MonitorThread)
                         hMonitorThread.daemon = True
@@ -122,6 +134,7 @@ def StopRecordRTP():
     global isRecording
     print("StopRecordRTP")
     isRecording = False
+    WriteToFile(IsRecordingFilePath, "0" )
     try:
         isTerminated = False
 
@@ -241,6 +254,7 @@ def MonitorThread():
                 isUSBDiskIsNotAvaliable = False
                 if CheckIfPathIsMount(mountpoint) == True:
                     FreeSpaceInMB = CheckFreeSpace(mountpoint)
+                    WriteToFile(FreeSpaceFilePath, str(FreeSpaceInMB) )
                     if FreeSpaceInMB < DiskSpaceLimit:
                         isLowDiskSpace = True
                         if isRecording == True:
