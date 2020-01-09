@@ -16,16 +16,16 @@ case $TTY in
 	if [[ $grepIsForceToWiFiOnlyMode -eq 1 ]] ; then
 		ifconfig eth0 192.168.0.215 up
 		echo "Force to WiFi only mode via GPIO 5"
-
-		cp /home/pi/Ath9kFirmware/original/htc_9271-1.4.0.fw /tmp/ath9k_htc/htc_9271-1.4.0.fw	
+	
+		cp /home/pi/Ath9kFirmware/original/htc_9271-1.4.0.fw /tmp/ath9k_htc/htc_9271-1.4.0.fw
 
 		#IsAth9kAvaliable=$(lsmod | grep ath9k_htc)
 
 		#if [[ $IsAth9kAvaliable != "" ]] ; then
 		#	echo "Ath9k detected. Reload driver with low TX power"
-		#	rmmod ath9k ath9k_htc ath9k_common ath9k_hw ath
-		#	sleep 2
-			modprobe ath9k_htc --config /etc/modprobe.d/Ath9kDefaultWiFi
+			rmmod ath9k ath9k_htc ath9k_common ath9k_hw ath
+			sleep 2
+			modprobe ath9k_htc -C /etc/modprobe.d/original/
 			sleep 1
 		#fi
 
@@ -63,6 +63,8 @@ case $TTY in
 		sleep 365d
 	else
 		cp /home/pi/Ath9kFirmware/mod/htc_9271-1.4.0.fw /tmp/ath9k_htc/htc_9271-1.4.0.fw
+		rmmod ath9k ath9k_htc ath9k_common ath9k_hw ath
+		sleep 2
 		modprobe ath9k_htc
 	fi
 
