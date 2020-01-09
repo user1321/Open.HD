@@ -6,7 +6,68 @@ case $TTY in
     /dev/tty1) # TX/RX
 	echo "tty1"
 	service ssh start
-	
+
+	mkdir /tmp/ath9k_htc
+	ln -s /tmp/ath9k_htc /lib/firmware/
+
+	/usr/bin/python /root/wifibroadcast_misc/gpio-AirForceWiFiOnly.py
+
+	grepIsForceToWiFiOnlyMode=$?
+	if [[ $grepIsForceToWiFiOnlyMode -eq 1 ]] ; then
+		ifconfig eth0 192.168.0.215 up
+		echo "Force to WiFi only mode via GPIO 5"
+
+		cp /home/pi/Ath9kFirmware/original/htc_9271-1.4.0.fw /tmp/ath9k_htc/htc_9271-1.4.0.fw	
+
+		#IsAth9kAvaliable=$(lsmod | grep ath9k_htc)
+
+		#if [[ $IsAth9kAvaliable != "" ]] ; then
+		#	echo "Ath9k detected. Reload driver with low TX power"
+		#	rmmod ath9k ath9k_htc ath9k_common ath9k_hw ath
+		#	sleep 2
+			modprobe ath9k_htc --config /etc/modprobe.d/Ath9kDefaultWiFi
+			sleep 1
+		#fi
+
+		DriveName=$(/usr/bin/python /root/wifibroadcast_misc/GetUSBDriveName.py)
+		
+		if [[ $DriveName != "None" ]] ; then
+			echo "USB drive: $DriveName detected"
+			mount -t ext2 $DriveName /mnt/usbdisk/
+		fi
+
+		ip link set wlan0 name wifihotspot0
+		ionice -c 3 nice dos2unix -n /boot/apconfig2.txt /tmp/apconfig.txt
+
+		ifconfig wifihotspot0 192.168.2.1 up
+		#Configure samba
+		mkdir /tmp/samba
+		mkdir /tmp/samba/run/
+		mkdir /tmp/samba/run/samba
+		mkdir /tmp/samba/spool
+		mkdir /tmp/samba/spool/samba
+#
+		cp -R /var/lib/samba_real /tmp/samba/lib-samba
+		mkdir /tmp/samba/lib-samba/private
+		mkdir /tmp/samba/cache-samba
+		mkdir /tmp/samba/log-samba
+		sudo ln -s /tmp/samba/log-samba /var/log/samba
+#
+#		service smbd restart
+#		/usr/sbin/smbd -D -s /etc/samba/smb.conf
+
+		/usr/sbin/dnsmasq --conf-file=/etc/dnsmasqWifi.conf
+		nice -n 5 hostapd -B /tmp/apconfig.txt 
+
+		/root/wifibroadcast_misc/samba.sh &
+		sleep 365d
+	else
+		cp /home/pi/Ath9kFirmware/mod/htc_9271-1.4.0.fw /tmp/ath9k_htc/htc_9271-1.4.0.fw
+		modprobe ath9k_htc
+	fi
+
+
+
 	python /root/wifibroadcast_misc/gpio-IsAir.py
 	
 	i2cdetect -y 1 | grep  "70: 70"
@@ -19,8 +80,8 @@ case $TTY in
 	
         i2cdetect -y 0 | grep  "30: -- -- -- -- -- -- -- -- -- -- -- 3b -- -- -- --"
         grepRet=$?
-	#killall omxplayer  > /dev/null 2>/dev/null
-	#killall omxplayer.bin  > /dev/null 2>/dev/null
+	killall omxplayer  > /dev/null 2>/dev/null
+	killall omxplayer.bin  > /dev/null 2>/dev/null
         if [[ $grepRet -eq 0 ]] ; then
 			/usr/bin/python3.5 /home/pi/RemoteSettings/Air/RemoteSettingSyncAir.py
 			CAM="1"
