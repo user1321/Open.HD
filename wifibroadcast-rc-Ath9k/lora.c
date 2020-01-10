@@ -150,7 +150,7 @@ void RepackMessage(unsigned char *UDPRecv,unsigned  char *SendBuffer)
 	
 
 
-    for(i=0;i<7;i++)
+    for(i=0;i<=7;i++)
     	RC_int[i] = (16 * RC_int[i] ) / 10 - 1398;//1408
 
 
