@@ -92,12 +92,8 @@ function tx_function {
 
 		if [ "$DRIVER" != "ath9k_htc" ]; then # in single mode and ralink cards always, use frametype 1 (data)
 			VIDEO_FRAMETYPE=0
-		    if [ "$DRIVER" == "rtl88xxau" ]; then
-		        	if [ "$CTS_PROTECTION" == "Y" ]; then
-				 	VIDEO_FRAMETYPE=1
-	              else
-				    VIDEO_FRAMETYPE=2
-	              fi
+		        if [ "$DRIVER" == "rtl88xxau" ]; then
+		        	VIDEO_FRAMETYPE=1
 			fi
 			RALINK=1
 		fi
@@ -139,7 +135,7 @@ function tx_function {
 			echo "CTS Protection disabled in config"
 			CTS=N
 		else
-			if [ "$DRIVER" == "ath9k_htc" ] || [ "$DRIVER" == "rtl88xxau" ]; then
+			if [ "$DRIVER" == "ath9k_htc" ]; then
 				echo "CTS Protection enabled in config"
 				CTS=Y
 			else
@@ -254,7 +250,7 @@ function tx_function {
 
     echo $BITRATE_KBIT > /tmp/bitrate_kbit
     echo $BITRATE_MEASURED_KBIT > /tmp/bitrate_measured_kbit
-    
+
     echo "0" > /tmp/isrecording
     echo "0" > /tmp/usbdrivefreespace
 
@@ -422,9 +418,15 @@ if [ -e /tmp/Air ]; then #Selected USB\IP mode - disable RPi camera even if plug
 	WithoutNativeRPiCamera="1"
 fi
 
+
+if [ $ChannelToListenIRCut != "0" ]; then
+        /usr/bin/python /home/pi/cameracontrol/IRCutSwitch.py -OpenIRCutAfter 1600 -IsBCM $IsBCM -EN1Pin $EN1Pin -IN1Pin $IN1Pin -IN2Pin $IN2Pin &
+fi
+
 if [ $ChannelToListenRTPRecord != "0" ]; then
         /usr/bin/python /home/pi/cameracontrol/SaveRTPToUSB.py -SaveVideoOnUSBAfter $SaveVideoOnUSBAfter -RTPSaveToUSBUrl "$RTPSaveToUSBUrl" &
 fi
+
 
 /usr/bin/python /home/pi/cameracontrol/cameracontrolUDP.py -IsArduCameraV21 $IsArduCameraV21 -IsCamera1Enabled $IsCamera1Enabled -IsCamera2Enabled $IsCamera2Enabled -IsCamera3Enabled $IsCamera3Enabled -IsCamera4Enabled $IsCamera4Enabled  -Camera1ValueMin $Camera1ValueMin -Camera1ValueMax $Camera1ValueMax -Camera2ValueMin $Camera2ValueMin -Camera2ValueMax $Camera2ValueMax -Camera3ValueMin $Camera3ValueMin -Camera3ValueMax $Camera3ValueMax  -Camera4ValueMin $Camera4ValueMin -Camera4ValueMax $Camera4ValueMax -DefaultCameraId $DefaultCameraId -BitrateMeasured $BITRATE -SecondaryCamera $SecondaryCamera -CameraType $CameraType -WithoutNativeRPiCamera $WithoutNativeRPiCamera -DefaultBandWidthAth9k $Bandwidth
 
