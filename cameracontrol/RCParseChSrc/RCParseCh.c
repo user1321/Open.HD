@@ -26,6 +26,7 @@
 #define BUFLEN 2  //Max length of buffer
 #define PORT 1257   //The port on which to send data
 #define PORTRTP 1256
+#define PORTIRCUT 1255
 
 int main(int argc, char *argv[])
 {
@@ -36,10 +37,14 @@ int main(int argc, char *argv[])
 	
 	uint16_t chValue;
 	uint16_t chValue2;
+	uint16_t chValue3;
 	int param_telemetry_protocol = 0;
 
 	int ChannelToListen = atoi(argv[1]);
 	int ChannelToListenRTPRecord = atoi(argv[2]);
+
+	int ChannelToListenIRCut = atoi(argv[3]);
+
 	//UDP init
 	   struct sockaddr_in si_other;
 	int s, i, slen = sizeof(si_other);
@@ -84,6 +89,29 @@ int main(int argc, char *argv[])
                 exit(1);
         }
 	//end init end
+
+        //udp init IR cut
+
+        struct sockaddr_in si_other3;
+        int s3, i3, slen3 = sizeof(si_other3);
+        char message3[BUFLEN];
+
+        if ((s3 = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
+        {
+                perror(s3);
+                exit(1);
+        }
+
+        memset((char *) &si_other3, 0, sizeof(si_other3));
+        si_other3.sin_family = AF_INET;
+        si_other3.sin_port = htons(PORTIRCUT);
+
+        if (inet_aton(SERVER, &si_other3.sin_addr) == 0)
+        {
+                fprintf(stderr, "inet_aton() failed\n");
+                exit(1);
+        }
+        //end init end
 
 	
 	while(!fBrokenSocket)
@@ -143,14 +171,7 @@ int main(int argc, char *argv[])
 									message[0] = chValue & 0xFF;
 									message[1] = chValue >> 8;
 								
-									if (sendto(s, message, 2, 0, (struct sockaddr *) &si_other, slen) == -1)
-									{
-										//printf("sendto() error");
-									}
-									else
-									{
-										//printf("sendto() - ok, chval: %d \n", chValue);
-									}
+									sendto(s, message, 2, 0, (struct sockaddr *) &si_other, slen);
 								}
 
 								if( ChannelToListenRTPRecord >= 1 && ChannelToListenRTPRecord <= 18)
@@ -182,15 +203,42 @@ int main(int argc, char *argv[])
                                                                         message2[0] = chValue2 & 0xFF;
                                                                         message2[1] = chValue2 >> 8;
 
-                                                                        if (sendto(s2, message2, 2, 0, (struct sockaddr *) &si_other2, slen2) == -1)
-                                                                        {
-                                                                                //printf("sendto() error");
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                                //printf("sendto() - ok, chval: %d \n", chValue);
-                                                                        }
+                                                                        sendto(s2, message2, 2, 0, (struct sockaddr *) &si_other2, slen2);
                                                                 }
+
+                                                                if( ChannelToListenIRCut >= 1 && ChannelToListenIRCut <= 18)
+                                                                {
+                                                                        //printf(" in range 1 - 18\n");
+                                                                        if (ChannelToListenIRCut == 1)  { chValue3 = mavlink_msg_rc_channels_get_chan1_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 2) { chValue3 = mavlink_msg_rc_channels_get_chan2_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 3) { chValue3 = mavlink_msg_rc_channels_get_chan3_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 4) { chValue3 = mavlink_msg_rc_channels_get_chan4_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 5) { chValue3 = mavlink_msg_rc_channels_get_chan5_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 6) { chValue3 = mavlink_msg_rc_channels_get_chan6_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 7) { chValue3 = mavlink_msg_rc_channels_get_chan7_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 8) { chValue3 = mavlink_msg_rc_channels_get_chan8_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 9) { chValue3 = mavlink_msg_rc_channels_get_chan9_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 10) { chValue3 = mavlink_msg_rc_channels_get_chan10_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 11) { chValue3 = mavlink_msg_rc_channels_get_chan11_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 12) { chValue3 = mavlink_msg_rc_channels_get_chan12_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 13) { chValue3 = mavlink_msg_rc_channels_get_chan13_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 14) { chValue3 = mavlink_msg_rc_channels_get_chan14_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 15) { chValue3 = mavlink_msg_rc_channels_get_chan15_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 16) { chValue3 = mavlink_msg_rc_channels_get_chan16_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 17) { chValue3 = mavlink_msg_rc_channels_get_chan17_raw(&msg); }
+                                                                        if (ChannelToListenIRCut == 18) { chValue3 = mavlink_msg_rc_channels_get_chan18_raw(&msg); }
+
+                                                                        //int sizeinbyte = sizeof(ChannelToListen);
+
+                                                                        //unsigned int  under RPi2 = 2 byte
+
+                                                                        message3[0] = chValue3 & 0xFF;
+                                                                        message3[1] = chValue3 >> 8;
+
+                                                                        sendto(s3, message3, 2, 0, (struct sockaddr *) &si_other3, slen3);
+                                                                }
+
+
 							}
 
 							break;
