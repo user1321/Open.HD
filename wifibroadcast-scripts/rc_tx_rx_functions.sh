@@ -96,7 +96,7 @@ function rctx_function {
 
                 if [ $FirstTimeRC == 0  ]; then
                     FirstTimeRC=1
-                   /home/pi/wifibroadcast-rc-Ath9k/rctxUDP.sh $ChannelToListen2 $ChannelIPCamera $IsBandSwicherEnabled $IsIPCameraSwitcherEnabled $IsEncrypt $NICS &
+                   /home/pi/wifibroadcast-rc-Ath9k/rctxUDP.sh $ChannelToListen2 $ChannelIPCamera $IsBandSwicherEnabled $IsIPCameraSwitcherEnabled $IsEncrypt $ChannelToSwitchDownlink $NICS &
                 fi
 
 		nice -n -5 /tmp/rctx $ChannelToListen2 $ChannelIPCamera $IsBandSwicherEnabled $IsIPCameraSwitcherEnabled $IsEncrypt $TrimChannel $Action $PWMCount $ActivateChannel $NICS
