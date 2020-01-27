@@ -31,6 +31,7 @@
 #define PORT 5566 // Encrypted RC out via SVPCom
 #define PORT2 1258 //BandSwitch py script in
 #define PORT3 1259 //IP or USB camera switch py script in
+#define PORT4 2312 //OpenHD telemetry or Lora telemetry downlink (values: 2 - openhd or 1 - Lora)
 
 
 char messageRCEncrypt[40];   //Encrypted RC Message
@@ -41,6 +42,7 @@ int ChannelIPCamera = 0;
 int IsEncrypt = 0;
 int IsIPCameraSwitcherEnabled = 0;
 int IsBandSwitcherEnabled = 0;
+int ChannelToSwitchDownlink=0;
 
 #ifdef JSSWITCHES  // 1 or 2 byte more for channels 9 - 16/24 as switches
 
@@ -302,7 +304,7 @@ int main (int argc, char *argv[]) {
 
     int x = optind;
     int num_interfaces = 0;
-	x += 5;
+	x += 6;
 	
     Channel = atoi(argv[1]);
 	ChannelIPCamera = atoi(argv[2]);
@@ -310,6 +312,7 @@ int main (int argc, char *argv[]) {
 	IsBandSwitcherEnabled = atoi(argv[3]);
 	IsIPCameraSwitcherEnabled = atoi(argv[4]);
 	IsEncrypt =  atoi(argv[5]);
+        ChannelToSwitchDownlink = atoi(argv[6]);
 
 	if (IsEncrypt == 0)
 	{
@@ -439,6 +442,27 @@ int main (int argc, char *argv[]) {
 	//udp init end
 	//________________________________
 	
+	//udp init3 Lora or OpenHD downlink telemetry
+
+    	struct sockaddr_in si_other4;
+        int s4, slen4 = sizeof(si_other4);
+        char message4[BUFLEN];
+
+        if ((s4 = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
+        {
+                exit(1);
+        }
+
+        memset((char *) &si_other4, 0, sizeof(si_other4));
+        si_other4.sin_family = AF_INET;
+        si_other4.sin_port = htons(PORT4);
+
+        if (inet_aton(SERVER, &si_other4.sin_addr) == 0)
+        {
+                fprintf(stderr, "inet_aton() failed\n");
+                exit(1);
+        }
+	//udp init end
 
 
 	
@@ -509,6 +533,34 @@ int main (int argc, char *argv[]) {
 			}
 		}
 		
+		if(ChannelToSwitchDownlink >= 1 && ChannelToSwitchDownlink <= 8)
+		{
+			tmp = ChannelToSwitchDownlink;
+			tmp--;
+			if( rcData[tmp] > 1700 )
+			{
+				sendto(s4, "2", 1, 0, (struct sockaddr *) &si_other4, slen4);
+			}
+			else
+			{
+				sendto(s4, "1", 1, 0, (struct sockaddr *) &si_other4, slen4);
+			}
+
+		}
+		if(ChannelToSwitchDownlink >= 9 && ChannelToSwitchDownlink <= 16)
+		{
+			tmp = ChannelToSwitchDownlink -8 -1;
+			if( (framedata.switches  >> tmp ) &  1 )
+			{
+				sendto(s4, "2", 1, 0, (struct sockaddr *) &si_other4, slen4);
+			}
+			else
+			{
+				sendto(s4, "1", 1, 0, (struct sockaddr *) &si_other4, slen4);
+			}
+
+		}
+
 		if (IsEncrypt == 1)
 		{
 			if (sendto(sRCEncrypt, buf, 21, 0, (struct sockaddr *) &si_otherRCEncrypt, slenRCEncrypt) == -1)
