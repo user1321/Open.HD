@@ -31,7 +31,13 @@ function hotspot_check_function {
             pause_while
 
          nice cat /root/telemetryfifo5 > /dev/pts/0 &
-        /home/pi/mavlink-router/mavlink-routerd  /dev/pts/1:57600 &
+	 if [ -e "/dev/ttyUSBLoraMavOut" ]; then
+                /home/pi/wifibroadcast-rc-Ath9k/DownlinkTelemetrySwitch/main  &
+                /home/pi/mavlink-router/mavlink-routerd /dev/pts/5:57600 &
+         else
+             /home/pi/mavlink-router/mavlink-routerd  /dev/pts/1:57600 &
+         fi
+
         #we still can have USB phone connected anytime. So, start programs anyway
         #Maybe add code inside USB tethering file to check  HOTSPOT is off and phone connected - start....
         #if [ "$ETHERNET_HOTSPOT" == "Y" ] || [ "$WIFI_HOTSPOT" != "N" ]; then
