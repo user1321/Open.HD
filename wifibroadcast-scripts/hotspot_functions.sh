@@ -33,9 +33,9 @@ function hotspot_check_function {
          nice cat /root/telemetryfifo5 > /dev/pts/0 &
 	 if [ -e "/dev/ttyUSBLoraMavOut" ]; then
                 /home/pi/wifibroadcast-rc-Ath9k/DownlinkTelemetrySwitch/main  &
-                /home/pi/mavlink-router/mavlink-routerd /dev/pts/5:57600 &
+                /home/pi/mavlink-router/mavlink-routerd /dev/pts/5:9600 &
          else
-             /home/pi/mavlink-router/mavlink-routerd  /dev/pts/1:57600 &
+             /home/pi/mavlink-router/mavlink-routerd  /dev/pts/1:9600 &
          fi
 	 
 	if [ $ForwardMavlinkToUART -eq 1 ]
