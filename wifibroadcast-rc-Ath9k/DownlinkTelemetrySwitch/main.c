@@ -94,7 +94,7 @@ int OpenAndConfigure(char *file)
 		struct termios options;
                 tcgetattr(serialport, &options);
                 cfmakeraw(&options);
-                cfsetospeed(&options, B57600);
+                cfsetospeed(&options, B9600);
                 options.c_cflag &= ~CSIZE;
                 options.c_cflag |= CS8; // Set 8 data bits
                 options.c_cflag &= ~PARENB; // Set no parity
