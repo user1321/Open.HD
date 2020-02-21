@@ -37,6 +37,17 @@ function hotspot_check_function {
          else
              /home/pi/mavlink-router/mavlink-routerd  /dev/pts/1:57600 &
          fi
+	 
+	if [ $ForwardMavlinkToUART -eq 1 ]
+	then
+        	while [ ! -e  /tmp/mavlink_router_pipe ]
+        	do
+                	echo "wait for mavlink routerd"
+                	sleep 1
+        	done
+		/home/pi/wifibroadcast-base/MavlinkPacketFilter/main &
+        	echo "add udp 127.0.0.1 127.0.0.1 2316 0" > /tmp/mavlink_router_pipe
+	fi
 
         #we still can have USB phone connected anytime. So, start programs anyway
         #Maybe add code inside USB tethering file to check  HOTSPOT is off and phone connected - start....
