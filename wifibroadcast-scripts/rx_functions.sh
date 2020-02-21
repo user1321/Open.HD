@@ -17,11 +17,11 @@ function rx_function {
     ionice -c 3 nice socat -lf /wbc_tmp/socat4.log -d -d pty,raw,echo=0 pty,raw,echo=0 & > /dev/null 2>&1
     sleep 1
     # setup virtual serial ports
-    stty -F /dev/pts/0 -icrnl -ocrnl -imaxbel -opost -isig -icanon -echo -echoe -ixoff -ixon 57600
-    stty -F /dev/pts/1 -icrnl -ocrnl -imaxbel -opost -isig -icanon -echo -echoe -ixoff -ixon 57600
+    stty -F /dev/pts/0 -icrnl -ocrnl -imaxbel -opost -isig -icanon -echo -echoe -ixoff -ixon 9600
+    stty -F /dev/pts/1 -icrnl -ocrnl -imaxbel -opost -isig -icanon -echo -echoe -ixoff -ixon 9600
 
-    stty -F /dev/pts/4 -icrnl -ocrnl -imaxbel -opost -isig -icanon -echo -echoe -ixoff -ixon 57600
-    stty -F /dev/pts/5 -icrnl -ocrnl -imaxbel -opost -isig -icanon -echo -echoe -ixoff -ixon 57600
+    stty -F /dev/pts/4 -icrnl -ocrnl -imaxbel -opost -isig -icanon -echo -echoe -ixoff -ixon 9600
+    stty -F /dev/pts/5 -icrnl -ocrnl -imaxbel -opost -isig -icanon -echo -echoe -ixoff -ixon 9600
 
     echo
 
