@@ -16,9 +16,13 @@
 #include<sys/socket.h>
 
 #include<pthread.h>
+#include <sys/time.h>
 
 #define BUFLEN 21	//Max length of buffer
 #define PORT 5566 	//1259	//LoRa UDP in
+
+long long LastPacketTime = 0;
+long long CurrentTim = 0;
 
 pthread_t hThread=0;
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
@@ -58,6 +62,14 @@ int set_interface_attribs(int fd, int speed)
         return -1;
     }
     return 0;
+}
+
+long long current_timestamp() {
+    struct timeval te;
+    gettimeofday(&te, NULL); // get current time
+    long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
+    // printf("milliseconds: %lld\n", milliseconds);
+    return milliseconds;
 }
 
 
@@ -100,6 +112,8 @@ void* StartUDPServer(void *arg)
 		}
 		else
 		{
+			//printf("received packet \n");
+			LastPacketTime = current_timestamp();
 			pthread_mutex_lock( &mutex1 );
 			memcpy(RCValues, buf,  BUFLEN);
 			IsNewDataToSend=1;
@@ -147,11 +161,13 @@ void RepackMessage(unsigned char *UDPRecv,unsigned  char *SendBuffer)
 	RcNumber--;
     }
 
-	
+
+
 
 
     for(i=0;i<=7;i++)
     	RC_int[i] = (16 * RC_int[i] ) / 10 - 1398;//1408
+
 
 
     //printf("RC_int: 8 - %d, 9 - %d, 10 - %d, 11  - %d, 12 - %d, 13  - %d , 14  - %d, 15  - %d, 15  - %d \n",RC_int[7],RC_int[8],RC_int[9], RC_int[10], RC_int[11], 
@@ -194,12 +210,14 @@ void RepackMessage(unsigned char *UDPRecv,unsigned  char *SendBuffer)
 
 int main(int argc, char** argv)
 {
-
 	if(argc < 2)
 	{
 		printf("Usage: ./lora /dev/ttyUSB0 \n");
 		return -1;
 	}
+
+	//init timer:
+	LastPacketTime = current_timestamp();
 
 
 
@@ -227,21 +245,26 @@ unsigned char SendBuffer[25];
 int done = 0;
     while(done != 1)
     {
-		RepackMessage(&RCValues[0], &SendBuffer[0]);
-		wlen = write(fd, &SendBuffer, 25);
-		if(wlen != 25)
+		CurrentTim = current_timestamp();
+		long long TimerRes = CurrentTim - LastPacketTime;
+		//printf("Timer: %llu \n", TimerRes);
+		if( TimerRes <=  500)
 		{
-			printf("Write to TTY - error. stop.");
-			done = 1;
+			RepackMessage(&RCValues[0], &SendBuffer[0]);
+			wlen = write(fd, &SendBuffer, 25);
+			if(wlen != 25)
+			{
+				printf("Write to TTY - error. stop.");
+				done = 1;
+			}
+			tcdrain(fd);
 		}
-//		IsNewDataToSend = 0;
-		//for(int i=0;i<25;i++)
-		//	printf(" %x", SendBuffer[i] & 0xff);
-		//printf(" end.\n");
-		//printf("Error from write: %d, %d\n", wlen, errno);
-		tcdrain(fd);    /* delay for output */
-		usleep(20);
-    }
+		//else
+		//{
+		//	printf("FailSafe \n");
+		//}
+		usleep(20); /* delay for output */
+    	}
 
 
 }
