@@ -191,6 +191,7 @@ int main(int argc, char *argv[]) {
 	    wbcdata.adapter[j].current_signal_dbm = -100;
 	    wbcdata.adapter[j].received_packet_cnt = 0;
 	    wbcdata.adapter[j].type = 0;
+            wbcdata.adapter[j].signal_good = 0;
 	}
 
         wbcdata.isrecording = 0;
@@ -266,7 +267,7 @@ int main(int argc, char *argv[]) {
 	    wbcdata.wifi_adapter_cnt = t->wifi_adapter_cnt;
 
 
-	    for(cardcounter=0; cardcounter<number_cards; ++cardcounter) {
+	    for(cardcounter=0; cardcounter<wbcdata.wifi_adapter_cnt; ++cardcounter) {
 		wbcdata.adapter[cardcounter].current_signal_dbm = t->adapter[cardcounter].current_signal_dbm;
 		wbcdata.adapter[cardcounter].received_packet_cnt = t->adapter[cardcounter].received_packet_cnt;
 		wbcdata.adapter[cardcounter].type = t->adapter[cardcounter].type;
