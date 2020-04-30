@@ -47,13 +47,6 @@ extern "C"
 
 #define	MAX_PENUMBRA_INTERFACES 8
 
-typedef struct {
-	uint32_t received_packet_cnt;
-	uint32_t wrong_crc_cnt;
-	int8_t current_signal_dbm;
-	int8_t type; // 0 = Atheros, 1 = Ralink
-	int signal_good;
-} wifi_adapter_rx_status_t;
 
 
 typedef struct {
